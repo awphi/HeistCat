@@ -16,19 +16,17 @@ public class CatController : MonoBehaviour
     private Rigidbody2D _rb2d;
     private Animator _animator;
     private ParticleSystem _sleepParticles;
+    private FacingController _facingController;
+    private ViewConeController _viewConeController;
 
     private int _nerve;
     private bool _nerveRecharging;
     private Vector2 _input;
     private bool _waitingForNerveRecharge = true;
-    private int _facing;
-
-    private Vector2 Facing => Utils.GetFacing(_facing);
 
     private static readonly int AnimVelX = Animator.StringToHash("vel_x");
     private static readonly int AnimVelY = Animator.StringToHash("vel_y");
     private static readonly int AnimSleeping = Animator.StringToHash("sleeping");
-    private static readonly int AnimFacing = Animator.StringToHash("facing");
 
     // Start is called before the first frame update
     private void Start()
@@ -36,9 +34,11 @@ public class CatController : MonoBehaviour
         _nerve = maxNerve;
         _rb2d = GetComponent<Rigidbody2D>();
         _animator = GetComponent<Animator>();
+        _facingController = GetComponent<FacingController>();
+        _viewConeController = GetComponentInChildren<ViewConeController>();
         _sleepParticles = transform.Find("SleepParticles").GetComponent<ParticleSystem>();
     }
-    
+
     private IEnumerator Recharge () {
         yield return new WaitForSeconds (nerveRechargeTime);
         _nerveRecharging = true;
@@ -53,14 +53,6 @@ public class CatController : MonoBehaviour
             _sleepParticles.Stop();
             _sleepParticles.Clear();
         }
-    }
-
-    private void SetFacing(int f)
-    {
-        _facing = f;
-        // Will flip the sprite if heading left
-        transform.eulerAngles = _facing == 3 ? new Vector3(0f, 180f, 0f) : new Vector3(0f, 0f, 0f);
-        _animator.SetInteger(AnimFacing, _facing);
     }
 
     private void UpdateNerve()
@@ -104,6 +96,16 @@ public class CatController : MonoBehaviour
     
         _input.x = math.abs(h) > 0.1 ? math.sign(h) : 0f;
         _input.y = math.abs(v) > 0.1 ? math.sign(v) : 0f;
+
+        var e = Input.GetButtonUp("Interact");
+        if (e)
+        {
+            var f = _viewConeController.GetFirstInteractable();
+            if (f != null)
+            {
+                f.Interact(_viewConeController);
+            }
+        }
     }
 
     private void FixedUpdate()
@@ -120,19 +122,18 @@ public class CatController : MonoBehaviour
             _rb2d.velocity = Vector2.zero;
         }
         
-        if (Vector2.Dot(_rb2d.velocity, Facing) <= 0)
+        if (Vector2.Dot(_rb2d.velocity, _facingController.Facing) <= 0)
         {
             if (_rb2d.velocity.x != 0)
             {
-                SetFacing(_rb2d.velocity.x > 0 ? 1 : 3);
+                _facingController.SetFacing(_rb2d.velocity.x > 0 ? FacingUtils.Direction.Right : FacingUtils.Direction.Left);
             } else if (_rb2d.velocity.y != 0)
             {
-                SetFacing(_rb2d.velocity.y > 0 ? 0 : 2);
+                _facingController.SetFacing(_rb2d.velocity.y > 0 ? FacingUtils.Direction.Up : FacingUtils.Direction.Down);
             }
         }
         
         _animator.SetFloat(AnimVelX, _rb2d.velocity.x);
         _animator.SetFloat(AnimVelY, _rb2d.velocity.y);
-        //transform.eulerAngles = new Vector3(0f, _rb2d.velocity.x > 0f ? 0f : 180f, 0f);
     }
 }
