@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering.Universal;
 using UnityEngine.UI;
 
 public class CatController : MonoBehaviour
@@ -10,23 +12,27 @@ public class CatController : MonoBehaviour
     public float speed = 5;
     public int nerveRechargeTime = 3;
     public int maxNerve = 250;
+    public int Score { get; private set; }
 
-    public Text nerveText;
+
+    public TMP_Text nerveText;
+    public TMP_Text scoreText;
     
     private Rigidbody2D _rb2d;
     private Animator _animator;
     private ParticleSystem _sleepParticles;
-    private FacingController _facingController;
     private ViewConeController _viewConeController;
+    public SpeechController speechController;
+    private Light2D[] _lights;
 
     private int _nerve;
     private bool _nerveRecharging;
     private Vector2 _input;
     private bool _waitingForNerveRecharge = true;
-
-    private static readonly int AnimVelX = Animator.StringToHash("vel_x");
-    private static readonly int AnimVelY = Animator.StringToHash("vel_y");
+    
     private static readonly int AnimSleeping = Animator.StringToHash("sleeping");
+    
+    public bool IsSleeping => _animator.GetBool(AnimSleeping);
 
     // Start is called before the first frame update
     private void Start()
@@ -34,9 +40,12 @@ public class CatController : MonoBehaviour
         _nerve = maxNerve;
         _rb2d = GetComponent<Rigidbody2D>();
         _animator = GetComponent<Animator>();
-        _facingController = GetComponent<FacingController>();
+        speechController = GetComponentInChildren<SpeechController>();
         _viewConeController = GetComponentInChildren<ViewConeController>();
+        _lights = GetComponentsInChildren<Light2D>();
         _sleepParticles = transform.Find("SleepParticles").GetComponent<ParticleSystem>();
+        
+        SetScore(0);
     }
 
     private IEnumerator Recharge () {
@@ -44,15 +53,37 @@ public class CatController : MonoBehaviour
         _nerveRecharging = true;
     }
 
+    private void SetLights(bool on)
+    {
+        foreach (var i in _lights)
+        {
+            i.enabled = on;
+        }
+    }
+
     private void SetSleep(bool s)
     {
         _animator.SetBool(AnimSleeping, s);
         if (s && !_sleepParticles.isPlaying) {
-            _sleepParticles.Play();   
+            _sleepParticles.Play();
+            SetLights(false);
         } else if(!s && _sleepParticles.isPlaying) {
             _sleepParticles.Stop();
             _sleepParticles.Clear();
+            SetLights(true);
         }
+    }
+
+    public void SetScore(int a)
+    {
+        Score = a;
+        scoreText.SetText("Loot: $" + Score + ".00");
+    }
+
+    public void AddScore(int amount)
+    {
+        speechController.Say("+$" + amount + ".00", Color.green);
+        SetScore(Score + amount);
     }
 
     private void UpdateNerve()
@@ -66,7 +97,7 @@ public class CatController : MonoBehaviour
                 _nerve += 1;
             }
         } else {
-            if (_nerve > 0 && Input.GetButton("Fire1"))
+            if (_nerve > 0 && Input.GetButton("Sleep"))
             {
                 SetSleep(true);
                 _nerve -= 1;
@@ -103,9 +134,10 @@ public class CatController : MonoBehaviour
             var f = _viewConeController.GetFirstInteractable();
             if (f != null)
             {
-                f.Interact(_viewConeController);
+                f.Interact(gameObject);
             }
         }
+        
     }
 
     private void FixedUpdate()
@@ -121,19 +153,5 @@ public class CatController : MonoBehaviour
         {
             _rb2d.velocity = Vector2.zero;
         }
-        
-        if (Vector2.Dot(_rb2d.velocity, _facingController.Facing) <= 0)
-        {
-            if (_rb2d.velocity.x != 0)
-            {
-                _facingController.SetFacing(_rb2d.velocity.x > 0 ? FacingUtils.Direction.Right : FacingUtils.Direction.Left);
-            } else if (_rb2d.velocity.y != 0)
-            {
-                _facingController.SetFacing(_rb2d.velocity.y > 0 ? FacingUtils.Direction.Up : FacingUtils.Direction.Down);
-            }
-        }
-        
-        _animator.SetFloat(AnimVelX, _rb2d.velocity.x);
-        _animator.SetFloat(AnimVelY, _rb2d.velocity.y);
     }
 }

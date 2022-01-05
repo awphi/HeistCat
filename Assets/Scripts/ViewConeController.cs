@@ -1,30 +1,38 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering.Universal;
 
-[RequireComponent(typeof(CircleCollider2D))]
-public class ViewConeController : MonoBehaviour
+[RequireComponent(typeof(CircleCollider2D), typeof(Light2D))]
+public class ViewConeController : MonoBehaviour, IFacingListener
 {
-    private CircleCollider2D _circleCollider;
     private FacingController _facingController;
+    private Light2D _viewLight;
     
     private readonly HashSet<Interactable> _itemsInRange = new HashSet<Interactable>();
     private readonly HashSet<Interactable> _itemsInView = new HashSet<Interactable>();
-
+    
     public LayerMask layerMask;
+    public float initialFov = 70f;
 
-    private float _hFov;
-
-    public float fov = 70f;
+    private float _fov;
+    public float Fov
+    {
+        get => _fov;
+        set
+        {
+            _fov = value;
+            _viewLight.pointLightOuterAngle = value;
+        }
+    }
+    
+    private float HFov => Fov / 2f;
 
     void Start()
     {
-        _circleCollider = GetComponent<CircleCollider2D>();
         _facingController = GetComponentInParent<FacingController>();
-        _hFov = fov / 2;
+        _viewLight = GetComponent<Light2D>();
+        Fov = initialFov;
     }
 
     public Interactable GetFirstInteractable()
@@ -32,10 +40,29 @@ public class ViewConeController : MonoBehaviour
         return _itemsInView.Count <= 0 ? null : _itemsInView.First();
     }
 
-    public void Remove(Interactable i)
+    private void Remove(Interactable item)
     {
-        _itemsInRange.Remove(i);
-        _itemsInView.Remove(i);
+        if (_itemsInRange.Contains(item))
+        {
+            _itemsInRange.Remove(item);
+        }
+
+        if (_itemsInView.Contains(item))
+        {
+            _itemsInView.Remove(item);
+            item.ExitView(transform.parent.gameObject);
+        }
+    }
+
+    private void Clean()
+    {
+        foreach(var i in _itemsInRange)
+        {
+            if (i != null) continue;
+            Remove(i);
+            Clean();
+            return;
+        }
     }
 
     private void Update()
@@ -45,25 +72,27 @@ public class ViewConeController : MonoBehaviour
             return;
         }
         
+        Clean();
+        
         var f = _facingController.Facing;
         var p = transform.position;
-        
+
         foreach(var i in _itemsInRange)
         {
             var n = i.transform.position - p;
             var nn = n.normalized;
             var a = Vector2.Angle(f, nn);
-            if (a <= _hFov && !_itemsInView.Contains(i))
+            if (a <= HFov && !_itemsInView.Contains(i))
             {
                 var r = Physics2D.Raycast(p, nn, n.magnitude, layerMask);
                 if (r.collider == null)
                 {
                     _itemsInView.Add(i);
-                    i.EnterView(this);
+                    i.EnterView(transform.parent.gameObject);
                 }
-            } else if (a > _hFov && _itemsInView.Contains(i)) {
+            } else if (a > HFov && _itemsInView.Contains(i)) {
                 _itemsInView.Remove(i);
-                i.ExitView(this);
+                i.ExitView(transform.parent.gameObject);
             }
         }
     }
@@ -81,8 +110,15 @@ public class ViewConeController : MonoBehaviour
     {
         var item = other.gameObject.GetComponent<Interactable>();
 
-        if (item == null || !_itemsInRange.Contains(item)) return;
-        
-        _itemsInRange.Remove(item);
+        if (item == null) return;
+
+        Remove(item);
+    }
+
+    public void OnFacingChange(FacingUtils.Direction old, FacingUtils.Direction updated)
+    {
+        var a = Vector2.SignedAngle(Vector2.up, FacingUtils.DirectionToVec(updated));
+        transform.eulerAngles = new Vector3(0f, 0f, a);
+        //Debug.Log(updated);
     }
 }

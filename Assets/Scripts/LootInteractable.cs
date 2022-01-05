@@ -1,52 +1,42 @@
 ﻿using System;
 using UnityEngine;
 
-[RequireComponent(typeof(SpriteRenderer), typeof(Animator))]
-public class LootInteractable : Interactable
+[RequireComponent(typeof(Animator))]
+public class LootInteractable : ShinyInteractable
 {
-    private SpriteRenderer _spriteRenderer;
     private Animator _animator;
+    private AudioSource _audio;
 
-    private ViewConeController _lastViewer;
-    
-    private static readonly int ShaderColor = Shader.PropertyToID("_Color");
-    private Color _defaultColor;
+    public int value = 100;
 
-    public Color highlightColor = Color.yellow;
+    private GameObject _lastViewer;
 
     private void Start()
     {
-        _spriteRenderer = GetComponent<SpriteRenderer>();
         _animator = GetComponent<Animator>();
-        
-        if (!_spriteRenderer.material.HasProperty(ShaderColor))
+        _audio = GetComponent<AudioSource>();
+    }
+
+    public override void Interact(GameObject viewer)
+    {
+        if (_lastViewer != null)
         {
-            throw new NotSupportedException("LootInteractable must have shader color property!");
+            return;
         }
-
-        _defaultColor = _spriteRenderer.material.GetColor(ShaderColor);
-    }
-
-    public override void EnterView(ViewConeController viewer)
-    {
-        _spriteRenderer.material.SetColor(ShaderColor, highlightColor);
-    }
-
-    public override void ExitView(ViewConeController viewer)
-    {
-        _spriteRenderer.material.SetColor(ShaderColor, _defaultColor);
-    }
-
-    public override void Interact(ViewConeController viewer)
-    {
+        
         _lastViewer = viewer;
+        var cat = _lastViewer.GetComponentInParent<CatController>();
+        if (cat != null)
+        {
+            cat.AddScore(value);
+        }
         _animator.Play("LootPickupAnimation");
+        _audio.Play();
     }
 
     public void Pickup()
     {
-        _lastViewer.Remove(this);
+        //Destroy(coll);
         Destroy(gameObject);
-        // TODO add points
     }
 }

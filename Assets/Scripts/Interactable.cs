@@ -2,9 +2,9 @@
 
 public abstract class Interactable : MonoBehaviour
 {
-    public abstract void EnterView(ViewConeController viewer);
+    public abstract void EnterView(GameObject viewer);
 
-    public abstract void ExitView(ViewConeController viewer);
+    public abstract void ExitView(GameObject viewer);
 
-    public abstract void Interact(ViewConeController viewer);
+    public abstract void Interact(GameObject viewer);
 } 
