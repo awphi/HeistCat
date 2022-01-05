@@ -7,7 +7,12 @@ using UnityEngine;
 public class CatInteractable : Interactable
 {
     public GameObject bloodSplatter;
+    public MainCameraController mainCameraController;
+    public GameObject deathScreen;
 
+    private bool _dead = false;
+
+    [HideInInspector]
     public CatController controller;
     
     private void Awake()
@@ -47,7 +52,7 @@ public class CatInteractable : Interactable
         }
         
         // If close enough - kill
-        if (d <= guardAi.KillRange)
+        if (d <= guardAi.KillRange && !_dead)
         {
             var str = " *oink* Got you!";
             if (controller.IsSleeping)
@@ -58,7 +63,11 @@ public class CatInteractable : Interactable
             guardAi.speechController.Say(str, Color.red, size: 6, anim: SpeechController.AnimDoFade, speed:0.3f);
 
             Instantiate(bloodSplatter, t.position, t.rotation);
-            Destroy(gameObject);
+            //Destroy(gameObject);
+            _dead = true;
+            gameObject.SetActive(false);
+            mainCameraController.StartCoroutine(mainCameraController.Shake(0.2f, 0.3f));
+            deathScreen.SetActive(true);
         }
 
     }

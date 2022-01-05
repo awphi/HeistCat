@@ -6,13 +6,14 @@ public class LootInteractable : ShinyInteractable
 {
     private Animator _animator;
     private AudioSource _audio;
-
-    public int value = 100;
+    
+    public float value = 100;
 
     private GameObject _lastViewer;
 
-    private void Start()
+    private new void Start()
     {
+        base.Start();
         _animator = GetComponent<Animator>();
         _audio = GetComponent<AudioSource>();
     }

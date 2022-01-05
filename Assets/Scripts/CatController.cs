@@ -12,7 +12,7 @@ public class CatController : MonoBehaviour
     public float speed = 5;
     public int nerveRechargeTime = 3;
     public int maxNerve = 250;
-    public int Score { get; private set; }
+    public float Score { get; private set; }
 
 
     public TMP_Text nerveText;
@@ -22,6 +22,7 @@ public class CatController : MonoBehaviour
     private Animator _animator;
     private ParticleSystem _sleepParticles;
     private ViewConeController _viewConeController;
+    [HideInInspector]
     public SpeechController speechController;
     private Light2D[] _lights;
 
@@ -74,15 +75,15 @@ public class CatController : MonoBehaviour
         }
     }
 
-    public void SetScore(int a)
+    public void SetScore(float a)
     {
         Score = a;
-        scoreText.SetText("Loot: $" + Score + ".00");
+        scoreText.SetText("Loot: $" + $"{Score:0.00}");
     }
 
-    public void AddScore(int amount)
+    public void AddScore(float amount)
     {
-        speechController.Say("+$" + amount + ".00", Color.green);
+        speechController.Say("+$" + $"{amount:0.00}", Color.green);
         SetScore(Score + amount);
     }
 

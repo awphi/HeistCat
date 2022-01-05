@@ -308,13 +308,13 @@ AnimatorStateTransition:
   m_Name: 
   m_Conditions:
   - m_ConditionMode: 2
-    m_ConditionEvent: moving
+    m_ConditionEvent: sleeping
     m_EventTreshold: 0
   - m_ConditionMode: 6
     m_ConditionEvent: facing
     m_EventTreshold: 1
   - m_ConditionMode: 2
-    m_ConditionEvent: sleeping
+    m_ConditionEvent: moving
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -7130337600855778667}
@@ -660,6 +660,9 @@ AnimatorStateTransition:
     m_EventTreshold: 2
   - m_ConditionMode: 2
     m_ConditionEvent: sleeping
+    m_EventTreshold: 0
+  - m_ConditionMode: 2
+    m_ConditionEvent: moving
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -2524866649515405218}

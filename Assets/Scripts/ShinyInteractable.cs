@@ -24,6 +24,7 @@ public abstract class ShinyInteractable : Interactable
 
     public override void EnterView(GameObject viewer)
     {
+        if (_spriteRenderer == null) return;
         _spriteRenderer.material.SetColor(ShaderColor, highlightColor);
     }
 

@@ -27,11 +27,17 @@ public class FourWayFacingRenderer : MonoBehaviour, IFacingListener
 
     private void UpdateFacingWithVelocity(Vector2 velocity)
     {
-        // Check if facing is already correct
-        if (!(Vector2.Dot(velocity, _facingController.Facing) <= 0)) return;
+        // Old: Check if facing is already correct
+        //if (!(Vector2.Dot(velocity, _facingController.Facing) <= 0)) return;
 
         var xAbs = math.abs(velocity.x);
         var yAbs = math.abs(velocity.y);
+
+        // Check if vel is practically zero, ignored to prevent jitters from small bounces against objects
+        if (xAbs <= 0.001f && yAbs < 0.001f)
+        {
+            return;
+        }
         
         // TODO edit this so its a scalar-based priority not x-first
         if (xAbs > yAbs)

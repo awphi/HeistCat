@@ -11,6 +11,7 @@ public class GuardAI : MonoBehaviour
     // Comp
     private AIDestinationSetter _destinationSetter;
     private AIPath _aiPath;
+    [HideInInspector]
     public SpeechController speechController;
     private AudioSource _audio;
     private FacingController _facingController;

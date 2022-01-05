@@ -5,9 +5,9 @@ using UnityEngine;
 
 public class BoJoInteractable : ShinyInteractable
 {
-    public GameObject dialogue;
-
-    void Start()
+    public UIManager uiManager;
+    
+    new void Start()
     {
         base.Start();
         Interact(null);
@@ -15,21 +15,13 @@ public class BoJoInteractable : ShinyInteractable
 
     public override void Interact(GameObject viewer)
     {
-        dialogue.SetActive(true);
+        uiManager.SetActivePane("BoJoScreen");
         Time.timeScale = 0f;
     }
 
-    private void Update()
+    public void Close()
     {
-        if (Input.GetButtonDown("Sleep"))
-        {
-            Close();
-        }
-    }
-
-    private void Close()
-    {
-        dialogue.SetActive(false);
+        uiManager.SetActivePane("GameScreen");
         Time.timeScale = 1f;
     }
 }
