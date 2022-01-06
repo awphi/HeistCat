@@ -6,7 +6,7 @@ public class EscapeTruckInteractable : ShinyInteractable
 {
     public UIManager uiManager;
     
-    public override void Interact(GameObject viewer)
+    public override void Interact(ViewConeController viewer)
     {
         var cat = viewer.GetComponent<CatController>();
         if (cat == null) return;

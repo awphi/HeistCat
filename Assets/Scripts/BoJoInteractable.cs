@@ -6,17 +6,20 @@ using UnityEngine;
 public class BoJoInteractable : ShinyInteractable
 {
     public UIManager uiManager;
-    
-    new void Start()
+
+    new IEnumerator Start()
     {
         base.Start();
+        yield return new WaitForSeconds(0.01f);
         Interact(null);
     }
 
-    public override void Interact(GameObject viewer)
+    public override void Interact(ViewConeController viewer)
     {
-        uiManager.SetActivePane("BoJoScreen");
-        Time.timeScale = 0f;
+        if (uiManager.SetActivePane("BoJoScreen"))
+        {
+            Time.timeScale = 0f;
+        }
     }
 
     public void Close()

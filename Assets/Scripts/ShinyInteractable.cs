@@ -8,7 +8,12 @@ public abstract class ShinyInteractable : Interactable
     private static readonly int ShaderColor = Shader.PropertyToID("_Color");
     
     private Color _defaultColor;
+    private float _defaultIntensity;
+    
     public Color highlightColor = Color.yellow;
+    public float highlightIntensityMultiplier = 2f;
+    
+    private static readonly int ShaderIntensity = Shader.PropertyToID("_Intensity");
 
     protected void Start()
     {
@@ -20,18 +25,21 @@ public abstract class ShinyInteractable : Interactable
         }
 
         _defaultColor = _spriteRenderer.material.GetColor(ShaderColor);
+        _defaultIntensity = _spriteRenderer.material.GetFloat(ShaderIntensity);
     }
 
-    public override void EnterView(GameObject viewer)
+    public override void EnterView(ViewConeController viewer)
     {
         if (_spriteRenderer == null) return;
         _spriteRenderer.material.SetColor(ShaderColor, highlightColor);
+        _spriteRenderer.material.SetFloat(ShaderIntensity, _defaultIntensity * highlightIntensityMultiplier);
     }
 
-    public override void ExitView(GameObject viewer)
+    public override void ExitView(ViewConeController viewer)
     {
         // Can be null when loot has been destroyed
         if (_spriteRenderer == null) return;
         _spriteRenderer.material.SetColor(ShaderColor, _defaultColor);
+        _spriteRenderer.material.SetFloat(ShaderIntensity, _defaultIntensity);
     }
 }

@@ -15,7 +15,9 @@ public class GuardAI : MonoBehaviour
     public SpeechController speechController;
     private AudioSource _audio;
     private FacingController _facingController;
-    private Light2D _killLight;
+
+    private ViewConeController _viewCone;
+    private ViewConeController _killCone;
 
     // Params
     public Transform catMarker;
@@ -23,28 +25,18 @@ public class GuardAI : MonoBehaviour
     public float patrolDelay = 0f;
     public float peripheralTime = 0.5f;
     public float lastSeenDelay = 0.5f;
-    public float initialKillRange = 3.5f;
+
+    public AudioClip spottedSound;
 
     public bool IsChasingCat { get; private set; }
 
     // Backing Props
     private bool _patrolPaused = false;
-    private float _killRange;
     private Transform[] _nodes;
     private float _switchTime = float.PositiveInfinity;
     private int _index = 0;
     private CatInteractable _trackingCat;
     private Coroutine _stopTrackingCoroutine;
-
-    public float KillRange
-    {
-        get => _killRange;
-        set
-        {
-            _killRange = value;
-            _killLight.pointLightOuterRadius = value;
-        }
-    }
 
     private void Awake()
     {
@@ -53,30 +45,37 @@ public class GuardAI : MonoBehaviour
         _audio = GetComponent<AudioSource>();
         _facingController = GetComponent<FacingController>();
         _destinationSetter = GetComponent<AIDestinationSetter>();
-        _killLight = transform.GetComponentInChildren<ViewConeController>().transform.Find("KillLight").GetComponent<Light2D>();
+        _viewCone = transform.Find("ViewCone").GetComponent<ViewConeController>();
+        _killCone = transform.Find("KillerViewCone").GetComponent<ViewConeController>();
 
-        KillRange = initialKillRange;
-
-        _nodes = new Transform[path.transform.childCount];
-        
-        for (var i = 0; i < path.transform.childCount; i++)
+        if (path != null)
         {
-            _nodes[i] = path.transform.GetChild(i).transform;
+            _nodes = new Transform[path.transform.childCount];
+
+            for (var i = 0; i < path.transform.childCount; i++)
+            {
+                _nodes[i] = path.transform.GetChild(i).transform;
+            }
+
+            if (_nodes.Length > 0)
+            {
+                // Teleport to start of path on awake
+                transform.position = _nodes[0].position;
+            }
         }
     }
 
     public void ChaseCat(CatInteractable cat)
     {
-        if (!IsChasingCat)
-        {
-            IsChasingCat = true;
-            SetPatrolPaused(true);
-            _destinationSetter.target = cat.transform;
-            _aiPath.autoRepath.mode = AutoRepathPolicy.Mode.Dynamic;
-            _aiPath.SearchPath();
-            speechController.Say("!", Color.red, size: 12, anim: SpeechController.AnimDoGrow);
-            _audio.Play();
-        }
+        // I.e. don't start a new chase if it's about to be killed via the kill cone or if already chasing
+        if (IsChasingCat || (cat.transform.position - transform.position).magnitude <= _killCone.Radius) return;
+        IsChasingCat = true;
+        SetPatrolPaused(true);
+        _destinationSetter.target = cat.transform;
+        _aiPath.autoRepath.mode = AutoRepathPolicy.Mode.Dynamic;
+        _aiPath.SearchPath();
+        speechController.Say("!", Color.red, size: 12, anim: SpeechController.AnimDoGrow);
+        _audio.PlayOneShot(spottedSound);
     }
 
     public void OnSeeCat(CatInteractable cat)
@@ -98,21 +97,21 @@ public class GuardAI : MonoBehaviour
         yield return new WaitForSeconds(peripheralTime);
         _trackingCat = null;
         IsChasingCat = false;
-        if (cat != null)
-        {
-            catMarker.position = cat.transform.position;
-            _destinationSetter.target = catMarker;
-            yield return new WaitUntil(() => _aiPath.reachedEndOfPath);
+        
+        catMarker.position = cat.transform.position;
+        _destinationSetter.target = catMarker;
+        yield return new WaitUntil(() => _aiPath.reachedEndOfPath);
 
-            var s = (int) _facingController.Direction;
-            for (var i = s; i < s + 4; i++)
-            {
-                var d = (FacingUtils.Direction) (i % 4);
-                _facingController.SetFacing(d);
-                yield return new WaitForSeconds(lastSeenDelay);
-            }
+        var s = (int) _facingController.Direction;
+        for (var i = s; i < s + 4; i++)
+        {
+            var d = (FacingUtils.Direction) (i % 4);
+            _facingController.SetFacing(d);
+            yield return new WaitForSeconds(lastSeenDelay);
         }
         
+        
+        speechController.Say("?", Color.white, SpeechController.AnimDoFloat);
         SetPatrolPaused(false);
         _stopTrackingCoroutine = null;
     }
@@ -148,10 +147,10 @@ public class GuardAI : MonoBehaviour
     {
         if (_trackingCat != null)
         {
-            _trackingCat.Interact(gameObject);
+            _trackingCat.Interact(_viewCone);
         }
         
-        if (_patrolPaused || _nodes.Length == 0) return;
+        if (_patrolPaused || path == null || _nodes.Length == 0) return;
         var search = false;
 
         // Note: using reachedEndOfPath and pathPending instead of reachedDestination here because

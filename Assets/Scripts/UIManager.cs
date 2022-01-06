@@ -15,6 +15,8 @@ public class UIManager : MonoBehaviour
         {
             p.gameObject.SetActive(false);
         }
+
+        SetActivePane(0);
     }
 
     public bool SetActivePane(string name)

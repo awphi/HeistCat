@@ -9,7 +9,7 @@ public class LootInteractable : ShinyInteractable
     
     public float value = 100;
 
-    private GameObject _lastViewer;
+    private ViewConeController _lastViewer;
 
     private new void Start()
     {
@@ -17,8 +17,8 @@ public class LootInteractable : ShinyInteractable
         _animator = GetComponent<Animator>();
         _audio = GetComponent<AudioSource>();
     }
-
-    public override void Interact(GameObject viewer)
+    
+    public override void Interact(ViewConeController viewer)
     {
         if (_lastViewer != null)
         {

@@ -8,14 +8,18 @@ public class ViewConeController : MonoBehaviour, IFacingListener
 {
     private FacingController _facingController;
     private Light2D _viewLight;
+    private CircleCollider2D _circleCollider;
     
     private readonly HashSet<Interactable> _itemsInRange = new HashSet<Interactable>();
     private readonly HashSet<Interactable> _itemsInView = new HashSet<Interactable>();
     
     public LayerMask layerMask;
     public float initialFov = 70f;
+    public float initialRadius = 8;
+    public float extraLightRadius = 0.5f;
 
     private float _fov;
+    private float _radius;
     public float Fov
     {
         get => _fov;
@@ -26,13 +30,27 @@ public class ViewConeController : MonoBehaviour, IFacingListener
         }
     }
     
+    public float Radius
+    {
+        get => _radius;
+        set
+        {
+            _radius = value;
+            _circleCollider.radius = value;
+            _viewLight.pointLightOuterRadius = value + extraLightRadius;
+        }
+    }
+    
     private float HFov => Fov / 2f;
 
     void Start()
     {
         _facingController = GetComponentInParent<FacingController>();
         _viewLight = GetComponent<Light2D>();
+        _circleCollider = GetComponent<CircleCollider2D>();
+        
         Fov = initialFov;
+        Radius = initialRadius;
     }
 
     public Interactable GetFirstInteractable()
@@ -50,18 +68,7 @@ public class ViewConeController : MonoBehaviour, IFacingListener
         if (_itemsInView.Contains(item))
         {
             _itemsInView.Remove(item);
-            item.ExitView(transform.parent.gameObject);
-        }
-    }
-
-    private void Clean()
-    {
-        foreach(var i in _itemsInRange)
-        {
-            if (i != null) continue;
-            Remove(i);
-            Clean();
-            return;
+            item.ExitView(this);
         }
     }
 
@@ -72,14 +79,18 @@ public class ViewConeController : MonoBehaviour, IFacingListener
             return;
         }
         
-        Clean();
-        
         var f = _facingController.Facing;
-        var p = transform.position;
+        var p = transform.position; 
 
-        foreach(var i in _itemsInRange)
+        foreach(var i in _itemsInRange.ToArray())
         {
-            var n = i.transform.position - p;
+            if (i == null || !i.enabled)
+            {
+                Remove(i);
+                continue;
+            }
+            
+            var n = i.GetComponent<SpriteRenderer>().bounds.center - p;
             var nn = n.normalized;
             var a = Vector2.Angle(f, nn);
             if (a <= HFov && !_itemsInView.Contains(i))
@@ -88,11 +99,11 @@ public class ViewConeController : MonoBehaviour, IFacingListener
                 if (r.collider == null)
                 {
                     _itemsInView.Add(i);
-                    i.EnterView(transform.parent.gameObject);
+                    i.EnterView(this);
                 }
             } else if (a > HFov && _itemsInView.Contains(i)) {
                 _itemsInView.Remove(i);
-                i.ExitView(transform.parent.gameObject);
+                i.ExitView(this);
             }
         }
     }
@@ -120,5 +131,14 @@ public class ViewConeController : MonoBehaviour, IFacingListener
         var a = Vector2.SignedAngle(Vector2.up, FacingUtils.DirectionToVec(updated));
         transform.eulerAngles = new Vector3(0f, 0f, a);
         //Debug.Log(updated);
+    }
+
+    public void InteractWithFirst()
+    {
+        var f = GetFirstInteractable();
+        if (f != null)
+        {
+            f.Interact(this);
+        }
     }
 }

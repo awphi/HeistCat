@@ -8,7 +8,7 @@ public class CatInteractable : Interactable
 {
     public GameObject bloodSplatter;
     public MainCameraController mainCameraController;
-    public GameObject deathScreen;
+    public UIManager uiManager;
 
     private bool _dead = false;
 
@@ -20,27 +20,34 @@ public class CatInteractable : Interactable
         controller = GetComponent<CatController>();
     }
 
-    public override void EnterView(GameObject viewer)
+    public override void EnterView(ViewConeController viewer)
     {
         // On EnterView make the guard who spotted cat chase it
-        var guardAi = viewer.GetComponent<GuardAI>();
+        var guardAi = viewer.GetComponentInParent<GuardAI>();
         if (guardAi == null) return;
         
-        guardAi.OnSeeCat(this);
+        if (viewer.name == "KillerViewCone")
+        {
+            Kill(guardAi);
+        }
+        else
+        {
+            guardAi.OnSeeCat(this);
+        }
     }
 
-    public override void ExitView(GameObject viewer)
+    public override void ExitView(ViewConeController viewer)
     {
         // On ExitView set last seen marker
-        var guardAi = viewer.GetComponent<GuardAI>();
+        var guardAi = viewer.GetComponentInParent<GuardAI>();
         if (guardAi == null) return;
         
         guardAi.OnUnseeCat(this);
     }
 
-    public override void Interact(GameObject viewer)
+    public override void Interact(ViewConeController viewer)
     {
-        var guardAi = viewer.GetComponent<GuardAI>();
+        var guardAi = viewer.GetComponentInParent<GuardAI>();
         if (guardAi == null) return;
 
         var t = transform;
@@ -50,25 +57,31 @@ public class CatInteractable : Interactable
         {
             guardAi.ChaseCat(this);
         }
-        
-        // If close enough - kill
-        if (d <= guardAi.KillRange && !_dead)
-        {
-            var str = " *oink* Got you!";
-            if (controller.IsSleeping)
-            {
-                str = "Can't fool me! *oink*";
-            }
-            
-            guardAi.speechController.Say(str, Color.red, size: 6, anim: SpeechController.AnimDoFade, speed:0.3f);
+    }
 
-            Instantiate(bloodSplatter, t.position, t.rotation);
-            //Destroy(gameObject);
-            _dead = true;
-            gameObject.SetActive(false);
-            mainCameraController.StartCoroutine(mainCameraController.Shake(0.2f, 0.3f));
-            deathScreen.SetActive(true);
+    private void Kill(GuardAI killer)
+    {
+        if (_dead)
+        {
+            return;
+        }
+        
+        var str = " *oink* Got you!";
+        if (controller.IsSleeping)
+        {
+            str = "Can't fool me! *oink*";
         }
 
+        if (killer != null)
+        {
+            killer.speechController.Say(str, Color.red, size: 6, anim: SpeechController.AnimDoFade, speed: 0.3f);
+        }
+
+        var t = transform;
+        Instantiate(bloodSplatter, t.position, t.rotation);
+        _dead = true;
+        gameObject.SetActive(false);
+        mainCameraController.StartCoroutine(mainCameraController.Shake(0.2f, 0.3f));
+        uiManager.SetActivePane("DeathScreen");
     }
 }

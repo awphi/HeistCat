@@ -132,11 +132,7 @@ public class CatController : MonoBehaviour
         var e = Input.GetButtonUp("Interact");
         if (e)
         {
-            var f = _viewConeController.GetFirstInteractable();
-            if (f != null)
-            {
-                f.Interact(gameObject);
-            }
+            _viewConeController.InteractWithFirst();
         }
         
     }
