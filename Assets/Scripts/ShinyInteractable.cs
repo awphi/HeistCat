@@ -4,7 +4,7 @@ using UnityEngine;
 [RequireComponent(typeof(SpriteRenderer))]
 public abstract class ShinyInteractable : Interactable
 {
-    private SpriteRenderer _spriteRenderer;
+    protected SpriteRenderer _spriteRenderer;
     private static readonly int ShaderColor = Shader.PropertyToID("_Color");
     
     private Color _defaultColor;

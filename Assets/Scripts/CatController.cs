@@ -5,6 +5,7 @@ using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering.Universal;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class CatController : MonoBehaviour
@@ -12,11 +13,8 @@ public class CatController : MonoBehaviour
     public float speed = 5;
     public int nerveRechargeTime = 3;
     public int maxNerve = 250;
-    public float Score { get; private set; }
-
 
     public TMP_Text nerveText;
-    public TMP_Text scoreText;
     
     private Rigidbody2D _rb2d;
     private Animator _animator;
@@ -30,6 +28,7 @@ public class CatController : MonoBehaviour
     private bool _nerveRecharging;
     private Vector2 _input;
     private bool _waitingForNerveRecharge = true;
+    private bool _sleepingDown = false;
     
     private static readonly int AnimSleeping = Animator.StringToHash("sleeping");
     
@@ -45,8 +44,11 @@ public class CatController : MonoBehaviour
         _viewConeController = GetComponentInChildren<ViewConeController>();
         _lights = GetComponentsInChildren<Light2D>();
         _sleepParticles = transform.Find("SleepParticles").GetComponent<ParticleSystem>();
-        
-        SetScore(0);
+    }
+
+    public void OnScoreChanged(int score, int change)
+    {
+        speechController.Say($"+${change}.00", Color.green);
     }
 
     private IEnumerator Recharge () {
@@ -75,18 +77,6 @@ public class CatController : MonoBehaviour
         }
     }
 
-    public void SetScore(float a)
-    {
-        Score = a;
-        scoreText.SetText("Loot: $" + $"{Score:0.00}");
-    }
-
-    public void AddScore(float amount)
-    {
-        speechController.Say("+$" + $"{amount:0.00}", Color.green);
-        SetScore(Score + amount);
-    }
-
     private void UpdateNerve()
     {
         if (_nerveRecharging)
@@ -98,7 +88,7 @@ public class CatController : MonoBehaviour
                 _nerve += 1;
             }
         } else {
-            if (_nerve > 0 && Input.GetButton("Sleep"))
+            if (_nerve > 0 && _sleepingDown)
             {
                 SetSleep(true);
                 _nerve -= 1;
@@ -120,21 +110,20 @@ public class CatController : MonoBehaviour
         var f = (float) _nerve / maxNerve * 100f;
         nerveText.text = "Nerve: " + $"{f:F1}";;
     }
-
-    private void Update()
-    {
-        var h = Input.GetAxis("Horizontal");
-        var v = Input.GetAxis("Vertical");
     
-        _input.x = math.abs(h) > 0.1 ? math.sign(h) : 0f;
-        _input.y = math.abs(v) > 0.1 ? math.sign(v) : 0f;
+    public void OnMove(InputValue value)
+    {
+        _input = value.Get<Vector2>();
+    }
 
-        var e = Input.GetButtonUp("Interact");
-        if (e)
-        {
-            _viewConeController.InteractWithFirst();
-        }
-        
+    public void OnInteract(InputValue value)
+    {
+         _viewConeController.InteractWithFirst();
+    }
+
+    public void OnSleep(InputValue value)
+    {
+        _sleepingDown = value.Get<float>() > 0f;
     }
 
     private void FixedUpdate()

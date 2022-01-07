@@ -45,19 +45,7 @@ public class CatInteractable : Interactable
         guardAi.OnUnseeCat(this);
     }
 
-    public override void Interact(ViewConeController viewer)
-    {
-        var guardAi = viewer.GetComponentInParent<GuardAI>();
-        if (guardAi == null) return;
-
-        var t = transform;
-        var d = (t.position - viewer.transform.position).magnitude;
-
-        if (!controller.IsSleeping)
-        {
-            guardAi.ChaseCat(this);
-        }
-    }
+    public override void Interact(ViewConeController viewer) { }
 
     private void Kill(GuardAI killer)
     {

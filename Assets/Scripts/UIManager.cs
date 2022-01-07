@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
     // Inspector params
     public CanvasGroup[] panes;
     
-    private int _activePane = 0;
+    private int _activePane = -1;
 
     private void Start()
     {
@@ -36,15 +38,30 @@ public class UIManager : MonoBehaviour
         return false;
     }
 
+    private IEnumerator Select(Selectable sel)
+    {
+        yield return new WaitForSecondsRealtime(0.1f);
+        sel.Select();
+    }
+
     public void SetActivePane(int x)
     {
         if (_activePane == x) return;
         
         //panes[_activePane].alpha = 0f;
-        panes[_activePane].gameObject.SetActive(false);
+        if (_activePane >= 0 && _activePane < panes.Length)
+        {
+            panes[_activePane].gameObject.SetActive(false);
+        }
 
         //panes[x].alpha = 1f;
         panes[x].gameObject.SetActive(true);
+
+        var btn = panes[x].gameObject.GetComponentInChildren<Button>();
+        if (btn != null)
+        {
+            StartCoroutine(Select(btn));
+        }
         
         _activePane = x;
     }
@@ -56,6 +73,7 @@ public class UIManager : MonoBehaviour
 
     public void TryAgain()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

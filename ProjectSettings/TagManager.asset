@@ -12,9 +12,9 @@ TagManager:
   - Water
   - UI
   - Furniture
-  - Player
-  - Enemies
-  - EnemiesMarkers
+  - PlayerAndGuards
+  - EnemiesViewCones
+  - 
   - BackWalls
   - 
   - 

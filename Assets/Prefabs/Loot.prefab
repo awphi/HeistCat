@@ -29,7 +29,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4083723376055010948}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.66, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -75,7 +75,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 437587066204957002, guid: 56cafba6e637cf143936eb33a92981d4, type: 3}
+  m_Sprite: {fileID: -7354379645890963283, guid: 4f6b5766b83da8146a1eea10fa69ba97, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -103,7 +103,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0}
-    oldSize: {x: 1.9375, y: 1.5625}
+    oldSize: {x: 1, y: 1}
     newSize: {x: 1.9375, y: 1.5625}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -125,7 +125,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  value: 100
+  highlightIntensityMultiplier: 2
+  lootData: {fileID: 11400000, guid: 59443555706e0fa4b871bf3ba49d23cf, type: 2}
 --- !u!95 &4083723376055010959
 Animator:
   serializedVersion: 3

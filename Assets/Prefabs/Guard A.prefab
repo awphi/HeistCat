@@ -81,7 +81,7 @@ GameObject:
   - component: {fileID: 4498820856288687716}
   - component: {fileID: 935331205498927883}
   - component: {fileID: 1194263232187412889}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: Unit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -123,6 +123,7 @@ MonoBehaviour:
   patrolDelay: 0
   peripheralTime: 1
   lastSeenDelay: 0.5
+  scoreDifficultyScaling: 0.01
   spottedSound: {fileID: 8300000, guid: edd8e5871a3ea2744a0dcc94582caf34, type: 3}
 --- !u!114 &4929864296380219714
 MonoBehaviour:
@@ -529,7 +530,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1032
   initialFov: 70
-  initialRadius: 3
+  initialRadius: 2.5
   extraLightRadius: 0.5
 --- !u!114 &6418684720852083738
 MonoBehaviour:
@@ -559,7 +560,7 @@ MonoBehaviour:
   m_PointLightInnerAngle: 25
   m_PointLightOuterAngle: 70
   m_PointLightInnerRadius: 0
-  m_PointLightOuterRadius: 3.5
+  m_PointLightOuterRadius: 3
   m_PointLightDistance: 3
   m_PointLightQuality: 1
   m_ShapeLightParametricSides: 5
@@ -637,7 +638,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1032
   initialFov: 70
-  initialRadius: 8
+  initialRadius: 7
   extraLightRadius: 0.5
 --- !u!114 &8491180289662167182
 MonoBehaviour:
@@ -667,7 +668,7 @@ MonoBehaviour:
   m_PointLightInnerAngle: 25
   m_PointLightOuterAngle: 70
   m_PointLightInnerRadius: 0
-  m_PointLightOuterRadius: 8.5
+  m_PointLightOuterRadius: 7.5
   m_PointLightDistance: 3
   m_PointLightQuality: 1
   m_ShapeLightParametricSides: 5

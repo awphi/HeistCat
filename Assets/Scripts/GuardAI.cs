@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Pathfinding;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering.Universal;
 using UnityEngine.Serialization;
@@ -15,6 +16,8 @@ public class GuardAI : MonoBehaviour
     public SpeechController speechController;
     private AudioSource _audio;
     private FacingController _facingController;
+    private ScoreManager _scoreManager;
+    private CatInteractable _cat;
 
     private ViewConeController _viewCone;
     private ViewConeController _killCone;
@@ -25,18 +28,18 @@ public class GuardAI : MonoBehaviour
     public float patrolDelay = 0f;
     public float peripheralTime = 0.5f;
     public float lastSeenDelay = 0.5f;
+    public float scoreDifficultyScaling = 0.01f;
 
     public AudioClip spottedSound;
 
-    public bool IsChasingCat { get; private set; }
+    private bool IsChasingCat { get; set; } = false;
 
     // Backing Props
     private bool _patrolPaused = false;
     private Transform[] _nodes;
     private float _switchTime = float.PositiveInfinity;
     private int _index = 0;
-    private CatInteractable _trackingCat;
-    private Coroutine _stopTrackingCoroutine;
+    public Coroutine StopTrackingCoroutine;
 
     private void Awake()
     {
@@ -47,6 +50,8 @@ public class GuardAI : MonoBehaviour
         _destinationSetter = GetComponent<AIDestinationSetter>();
         _viewCone = transform.Find("ViewCone").GetComponent<ViewConeController>();
         _killCone = transform.Find("KillerViewCone").GetComponent<ViewConeController>();
+        _scoreManager = ScoreManager.Get();
+        _scoreManager.scoreChanged.AddListener(OnScoreChanged);
 
         if (path != null)
         {
@@ -65,10 +70,22 @@ public class GuardAI : MonoBehaviour
         }
     }
 
-    public void ChaseCat(CatInteractable cat)
+    private void OnScoreChanged(int score, int change)
     {
-        // I.e. don't start a new chase if it's about to be killed via the kill cone or if already chasing
-        if (IsChasingCat || (cat.transform.position - transform.position).magnitude <= _killCone.Radius) return;
+        // Using this graph I designed: https://www.desmos.com/calculator/tlmfgxx9pl
+        var old = _viewCone.Radius;
+        _viewCone.Radius = Mathf.Log(scoreDifficultyScaling * score + 1f) + _viewCone.initialRadius;
+        Debug.Log("New guard ViewCone r:" + _viewCone.Radius + ", prev: " + old);
+    }
+
+    public bool StartChasingCat(CatInteractable cat)
+    {
+        var d = (cat.transform.position - transform.position).magnitude;
+        // I.e. don't start a new chase if it's about to be killed via the kill cone or if already chasing or if sleeping
+        if (IsChasingCat || cat.controller.IsSleeping || d <= _killCone.Radius)
+        {
+            return false;
+        }
         IsChasingCat = true;
         SetPatrolPaused(true);
         _destinationSetter.target = cat.transform;
@@ -76,28 +93,19 @@ public class GuardAI : MonoBehaviour
         _aiPath.SearchPath();
         speechController.Say("!", Color.red, size: 12, anim: SpeechController.AnimDoGrow);
         _audio.PlayOneShot(spottedSound);
+        return true;
     }
 
     public void OnSeeCat(CatInteractable cat)
     {
-        if (_trackingCat == null)
-        {
-            if (_stopTrackingCoroutine != null)
-            {
-                StopCoroutine(_stopTrackingCoroutine);
-            }
-
-            // If the cat is sleeping, we walk past as normal BUT still track it and kill if it sleeps in the kill zone
-            _trackingCat = cat;
-        }
+        _cat = cat;
     }
 
     private IEnumerator StopTrackingCat(CatInteractable cat)
     {
         yield return new WaitForSeconds(peripheralTime);
-        _trackingCat = null;
         IsChasingCat = false;
-        
+
         catMarker.position = cat.transform.position;
         _destinationSetter.target = catMarker;
         yield return new WaitUntil(() => _aiPath.reachedEndOfPath);
@@ -111,15 +119,15 @@ public class GuardAI : MonoBehaviour
         }
         
         
-        speechController.Say("?", Color.white, SpeechController.AnimDoFloat);
         SetPatrolPaused(false);
-        _stopTrackingCoroutine = null;
+        StopTrackingCoroutine = null;
     }
     
 
     public void OnUnseeCat(CatInteractable cat)
     {
-        _stopTrackingCoroutine = StartCoroutine(StopTrackingCat(cat));
+        _cat = null;
+        StopTrackingCoroutine = StartCoroutine(StopTrackingCat(cat));
         // Use position as to no longer track the cat
         //catMarker.position = cat.transform.position;
         //_destinationSetter.target = catMarker;
@@ -143,11 +151,19 @@ public class GuardAI : MonoBehaviour
         }
     }
 
+    private void Chase(CatInteractable cat)
+    {
+        if (StartChasingCat(cat) && StopTrackingCoroutine != null)
+        {
+            StopCoroutine(StopTrackingCoroutine);
+        }
+    }
+
     private void Update ()
     {
-        if (_trackingCat != null)
+        if (_cat != null)
         {
-            _trackingCat.Interact(_viewCone);
+            Chase(_cat);
         }
         
         if (_patrolPaused || path == null || _nodes.Length == 0) return;
